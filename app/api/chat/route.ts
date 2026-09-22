@@ -5,10 +5,17 @@ import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 75;
 
 const MODEL = "cognitivecomputations/dolphin-mistral-24b-venice-edition:free";
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const TIMEOUT_MS = 75_000;
+
+function getAppUrl(): string {
+  if (process.env.NEXTAUTH_URL) return process.env.NEXTAUTH_URL;
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  return "http://localhost:3000";
+}
 
 type OpenRouterMessage = {
   role: "system" | "user" | "assistant";
@@ -177,7 +184,7 @@ export async function POST(request: Request): Promise<Response> {
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": process.env.NEXTAUTH_URL || "http://localhost:3000",
+        "HTTP-Referer": getAppUrl(),
         "X-Title": "NullShell"
       },
       body: JSON.stringify({
