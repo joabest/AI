@@ -2,25 +2,13 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-
-const isProduction = process.env.NODE_ENV === "production";
+import { authConfig } from "@/auth.config";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  ...authConfig,
   secret: process.env.NEXTAUTH_SECRET,
   trustHost: true,
   session: { strategy: "jwt" },
-  pages: { signIn: "/login" },
-  cookies: {
-    sessionToken: {
-      name: isProduction ? "__Secure-authjs.session-token" : "authjs.session-token",
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: isProduction
-      }
-    }
-  },
   providers: [
     Credentials({
       name: "Email e senha",
@@ -53,16 +41,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     })
   ],
   callbacks: {
-    authorized({ auth: session, request }) {
-      const path = request.nextUrl.pathname;
-      const publicPath =
-        path === "/" ||
-        path === "/login" ||
-        path.startsWith("/api/auth");
-
-      if (publicPath) return true;
-      return Boolean(session?.user);
-    },
+    ...authConfig.callbacks,
     jwt({ token, user }) {
       if (user?.id) token.id = user.id;
       return token;
